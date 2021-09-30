@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company:  www.circuitden.com  
-// Engineer: Artin Isagholian
+// Company:     www.circuitden.com
+// Engineer:    Artin Isagholian
+//              artinisagholian@gmail.com
 // 
 // Create Date: 01/26/2021 11:36:24 AM
 // Design Name: 
@@ -48,7 +49,7 @@ module eth_tx_fsm(
     localparam S_TRANSMIT_GAP 	         = 8'd7;
 
 
-
+    //MAC source/destination is fixed but this can be made an input
     wire [47:0] mac_destination = 48'hFF_FF_FF_FF_FF_FF;
 	wire [47:0] mac_source      = 48'h1A_2B_3C_4D_5E_6F;
 	
@@ -66,17 +67,25 @@ module eth_tx_fsm(
     wire [7:0]   crc_data_out;
     reg  [7:0]   gap_count;
     wire         o_dv;
-    wire         tx_start_pos_edge;
-    assign       tx_start_pos_edge = (tx_start[2] == 0 && tx_start[1] == 1) ? 1 : 0;
+
+
+
+    //make switch to CRC module when its time to trasmit CRC at end of packet
     wire [7:0]   output_data;
     assign       output_data = (state == S_TRANSMIT_CRC) ? crc_data_out : tx_data_delay;
     
     
+    //if lfsr mode is enabled, transmit lfsr test sequence instead of data from TX memory
     reg          eth_tx_lfsr_enable = 0;
     wire [7:0]   recieved_data;
     assign       recieved_data = (eth_tx_lfsr_enable) ? i_lfsr_data : i_eth_data_in_8b;
     
-    
+    //start signal pos edge detector
+    wire         tx_start_pos_edge;
+    assign       tx_start_pos_edge = (tx_start[2] == 0 && tx_start[1] == 1) ? 1 : 0;
+
+
+    //minimum payload size is 60 to be compliant with winpcap
     wire [15:0] tx_size;
     assign tx_size = (i_eth_tx_size < 60) ? 16'd60 : i_eth_tx_size;
     
@@ -135,6 +144,7 @@ module eth_tx_fsm(
                 end
                 
                 S_TRANSMIT_PREAMBLE: begin
+                    //preamble consists of 7 byts of 8'h55
                     tx_enable <= 1;
                     if(proc_cntr < 7)begin
                         proc_cntr <= proc_cntr + 1;
@@ -149,6 +159,7 @@ module eth_tx_fsm(
                 
                 
                 S_TRANSMIT_SOF: begin
+                    //start of frame is 1 byte of 8'D5
                     state <= S_TRANSMIT_MAC_DES;
                     crc_enable <= 1'b1;                   
                     tx_data <= saved_mac_destination[47:40];
@@ -247,11 +258,23 @@ module eth_tx_fsm(
     );
     
     
-     wire ddr_clk;
+     //create 90 degrees phase shifted version of i_eth_clk
+     //this will give us 2ns of data setup time
+     //satisifying the 1.8ns of data setup time required
+    /*
+     ____      ____
+    |    |____|    |____     ....     i_eth clk:
+
+      -t- = 2ns
+       ____      ____
+    __|    |____|    |____   ....     etch_clk_90:
+    */
+     
+     wire eth_clk_90;
      clk_wiz_1 i_clk_wiz_ddr_data(
         .reset(i_rst),
         .clk_in1(i_eth_clk),
-        .clk_out1(ddr_clk),
+        .clk_out1(eth_clk_90),
         .locked()
     );
     
@@ -263,7 +286,7 @@ module eth_tx_fsm(
         .SRTYPE("ASYNC")           // Set/Reset type: "SYNC" or "ASYNC"
     ) r_ddr_txck (
         .Q(o_eth_txck),          // 1-bit output for positive edge of clock
-        .C(ddr_clk),                  // 1-bit primary clock input
+        .C(eth_clk_90),                  // 1-bit primary clock input
         .CE(1'b1),                 // 1-bit clock enable input
         .D1(1'b1),                // 1-bit DDR data input
         .D2(1'b0),                // 1-bit DDR data input

@@ -2,6 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // Company:     www.circuitden.com
 // Engineer:    Artin Isagholian
+//              artinisagholian@gmail.com
 // 
 // Create Date: 02/05/2021 09:23:54 AM
 // Design Name: 
@@ -63,7 +64,7 @@ module ethernet_interface_top(
         
         
         /************************************
-                LSFR Generator Control
+                LFSR Generator Control
         ************************************/
         input wire [31:0]   i_lfsr_seed,
         input wire          i_lfsr_seed_rst,
@@ -139,7 +140,7 @@ module ethernet_interface_top(
         );
     
         
-        //LSFR Generator    
+        //LFSR Generator    
         lfsr_wrapper lfsr_wrapper_inst(
              .i_clk(i_main_clk)
             ,.i_rst_seed(i_lfsr_seed_rst)

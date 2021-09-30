@@ -21,31 +21,35 @@
 
 module lfsr_wrapper
   ( 
-    input wire i_clk
-  , input wire i_rst_seed
-  , input wire i_enable
-  , input wire [31:0] i_seed_data  // Optional Seed Value
-  , output reg [7:0] o_lfsr_data = 0
+    input wire i_clk,
+    input wire i_rst_seed,
+    input wire i_enable,
+    input wire [31:0] i_seed_data,  // Optional Seed Value
+    output reg [7:0] o_lfsr_data = 0
   );
 
-	reg [2:0] state;
 	
 	
 	localparam S_IDLE 	       	         = 3'd0;
     localparam S_RST_SEED        	     = 3'd1;
     localparam S_TRANSMIT_COUNT          = 3'd2;
     localparam S_TRANSMIT_LFSR		     = 3'd3;
+
+
+	reg [2:0] state = S_IDLE;
+
 	
-  // Purpose: Load up LFSR with Seed if Data Valid (DV) pulse is detected.
+  // Load up LFSR with Seed if Data Valid (DV) pulse is detected.
   // Othewise just run LFSR when enabled.
   
   reg [31:0] packet_count = 32'h01234567;
-  reg [31:0] word_32b_out;
+  reg [31:0] word_32b_out = 0;
   
   reg [1:0] byte_count = 0;
   
   wire [31:0] lfsr_32b_data;
   reg en_lfsr = 0;
+
   always @(posedge i_clk) begin
     case(state)
 		S_IDLE: begin

@@ -2,6 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // Company:     www.circuitden.com  
 // Engineer:    Artin Isagholian
+//              artinisagholian@gmail.com
 // 
 // Create Date: 07/12/2021 10:44:43 AM
 // Design Name: 
@@ -25,9 +26,9 @@ module eth_rx_fsm(
         input wire          i_rst,
         input wire          i_eth_rst_waddr,
         input wire          i_eth_dv,
-        output reg          o_eth_mem_we = 0, //we to memory
-        output reg [15:0]   o_eth_mem_wr_addr = 0, //address to memory    
         input wire [3:0]    i_eth_rxd_4b,
+        output reg [15:0]   o_eth_mem_wr_addr = 0, //address to memory    
+        output reg          o_eth_mem_we = 0, //we to memory
         output wire [7:0]   o_eth_data_out_8b,
         output reg          o_busy = 0,
         output reg [9:0]    o_packet_count = 0,
@@ -173,6 +174,9 @@ module eth_rx_fsm(
     reg [15:0] counter = 0;
     wire [7:0] crc_data_input;
     
+
+
+    //delay flops
     always @(posedge i_eth_clk)begin
         if(i_rst)begin
             eth_dv = 0;
@@ -328,14 +332,6 @@ module eth_rx_fsm(
                     end
                     else begin
                         proc_cntr <= 0;
-                        /*
-                        if(cal_select == 0)begin
-                            counter <= 0;
-                        end
-                        else begin
-                            counter <= 1;
-                        end
-                        */
                         state <= S_DELAY;
                     end
                 end

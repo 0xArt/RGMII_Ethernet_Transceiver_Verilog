@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company:  www.circuitden.com
-// Engineer: Artin Isagholian
+// Company:     www.circuitden.com
+// Engineer:    Artin Isagholian
+//              artinisagholian@gmail.com
 // 
 // Create Date: 02/04/2021 10:24:13 AM
 // Design Name: 
@@ -16,35 +17,40 @@
 // Revision:
 // Revision 0.01 - File Created
 // Additional Comments:
+//  Original file from https://www.nandland.com/vhdl/modules/lfsr-linear-feedback-shift-register.html
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 // Parameters:
 // NUM_BITS - Set to the integer number of bits wide to create your LFSR.
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 
 module lfsr #(parameter NUM_BITS = 6'd32)
-  ( input wire i_clk
-  , input wire i_rst_seed
-  , input wire i_enable
-  , input wire [NUM_BITS-1:0] i_seed_data  // Optional Seed Value
-  , output wire [NUM_BITS-1:0] o_lfsr_data
+  ( 
+    input wire                  i_clk,
+    input wire                  i_rst_seed,
+    input wire                  i_enable,
+    input wire  [NUM_BITS-1:0]  i_seed_data, 
+    output wire [NUM_BITS-1:0]  o_lfsr_data
   );
  
-  reg [NUM_BITS:1] r_lfsr = 0;
-  reg              r_xnor = 0;
+  reg [NUM_BITS-1:0] r_lfsr = 0;
+  reg                r_xnor = 0;
+
+
+  assign o_lfsr_data = r_lfsr[NUM_BITS-1:0];
  
-  // Purpose: Load up LFSR with Seed if rst pulse is detected.
+  // Load up LFSR with seet if rst pulse is detected.
   // Otherwise just run LFSR when enabled.
   always @(posedge i_clk) begin
-	if (i_rst_seed == 1'b1) begin
-		 r_lfsr <= i_seed_data;
-	end else begin
-		if (i_enable == 1'b1) begin
-			r_lfsr <= {r_lfsr[NUM_BITS-1:1], r_xnor};
-		end
+    if (i_rst_seed) begin
+      r_lfsr <= i_seed_data;
+    end else begin
+      if (i_enable) begin
+        r_lfsr <= {r_lfsr[NUM_BITS-1:1], r_xnor};
+      end
     end
   end
  
@@ -144,11 +150,11 @@ module lfsr #(parameter NUM_BITS = 6'd32)
           r_xnor = r_lfsr[32] ^~ r_lfsr[22] ^~ r_lfsr[2] ^~ r_lfsr[1];
         end
  
-      endcase // case (NUM_BITS)
-    end // always @ (*)
+      endcase 
+    end 
  
  
-  assign o_lfsr_data = r_lfsr[NUM_BITS:1];
+  
  
 endmodule
 

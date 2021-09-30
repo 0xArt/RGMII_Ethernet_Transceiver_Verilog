@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company:  www.circuitden.com
-// Engineer: Artin Isagholian
+// Company:     www.circuitden.com
+// Engineer:    Artin Isagholian
+//              artinisagholian@gmail.com
 // 
 // Create Date: 01/24/2021 06:35:25 PM
 // Design Name: 
