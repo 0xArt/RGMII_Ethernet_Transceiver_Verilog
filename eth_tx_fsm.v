@@ -62,11 +62,11 @@ module eth_tx_fsm(
     reg          tx_enable = 0;
     reg          tx_enable_delay = 'd0;
     reg  [7:0]   tx_data_delay = 0;
-    reg  [2:0]   tx_start = 0;
+    reg  [2:0]   r_eth_tx_start = 0;
     reg  [15:0]  tx_size_cache;
     wire [7:0]   crc_data_out;
-    reg  [7:0]   gap_count;
-    wire         o_dv;
+    reg  [7:0]   r_gap_count;
+    wire         crc_dv;
 
 
 
@@ -81,8 +81,8 @@ module eth_tx_fsm(
     assign       recieved_data = (eth_tx_lfsr_enable) ? i_lfsr_data : i_eth_data_in_8b;
     
     //start signal pos edge detector
-    wire         tx_start_pos_edge;
-    assign       tx_start_pos_edge = (tx_start[2] == 0 && tx_start[1] == 1) ? 1 : 0;
+    wire         eth_tx_start_re;
+    assign       eth_tx_start_re = (r_eth_tx_start[2] == 0 && r_eth_tx_start[1] == 1) ? 1 : 0;
 
 
     //minimum payload size is 60 to be compliant with winpcap
@@ -94,13 +94,13 @@ module eth_tx_fsm(
     always @(posedge i_eth_clk)begin
         if(i_rst)begin
             tx_data_delay <= 0;
-            tx_start <= 0;
+            r_eth_tx_start <= 0;
             tx_enable_delay <= 0;
         end
         else begin
-            tx_start[0]      <= i_eth_tx_start;
-            tx_start[1]      <= tx_start[0];
-            tx_start[2]      <= tx_start[1];
+            r_eth_tx_start[0]      <= i_eth_tx_start;
+            r_eth_tx_start[1]      <= r_eth_tx_start[0];
+            r_eth_tx_start[2]      <= r_eth_tx_start[1];
             tx_enable_delay  <= tx_enable;
             tx_data_delay    <= tx_data;
         end
@@ -122,7 +122,7 @@ module eth_tx_fsm(
             tx_size_cache <= 0;
             eth_tx_lfsr_enable <= 0;
             o_lfsr_enable <= 0;
-            gap_count <= 0;
+            r_gap_count <= 0;
         end
         else begin
             case(state)
@@ -130,7 +130,7 @@ module eth_tx_fsm(
                 S_IDLE: begin
                     o_eth_mem_rd_addr <= 0;
                     tx_data <= 0;
-                    if(tx_start_pos_edge)begin
+                    if(eth_tx_start_re)begin
                         state <= S_TRANSMIT_PREAMBLE;
                         proc_cntr <= 0;
                         o_busy  <= 1;
@@ -138,7 +138,7 @@ module eth_tx_fsm(
                         saved_mac_destination <= mac_destination;
                         saved_mac_source      <= mac_source;
                         o_eth_mem_rd_addr     <= 0;
-                        gap_count <= i_gap_count;
+                        r_gap_count <= i_gap_count;
                         eth_tx_lfsr_enable <= i_eth_tx_lfsr_enable;
                     end
                 end
@@ -159,7 +159,7 @@ module eth_tx_fsm(
                 
                 
                 S_TRANSMIT_SOF: begin
-                    //start of frame is 1 byte of 8'D5
+                    //start of frame is 1 byte of 8'hD5
                     state <= S_TRANSMIT_MAC_DES;
                     crc_enable <= 1'b1;                   
                     tx_data <= saved_mac_destination[47:40];
@@ -224,7 +224,7 @@ module eth_tx_fsm(
                         end
                     end
                     else begin
-                        if(gap_count == 0)begin
+                        if(r_gap_count == 0)begin
                             o_busy <= 0;
                             state <= S_IDLE;
                         end
@@ -236,7 +236,7 @@ module eth_tx_fsm(
                 end
                 
                 S_TRANSMIT_GAP: begin
-                    if(proc_cntr < gap_count)begin
+                    if(proc_cntr < r_gap_count)begin
                         proc_cntr <= proc_cntr + 1;
                     end
                     else begin
@@ -249,11 +249,11 @@ module eth_tx_fsm(
     end
     
 
-    crc32_in8 i_crc32_tx(
+    crc32_in8 crc32_in8_tx_inst(
           .i_clk(i_eth_clk) //
         , .i_dv(crc_enable) //
         , .i_data_in(tx_data) //
-        , .o_dv(o_dv)
+        , .o_dv(crc_dv)
         , .o_data_out(crc_data_out) //
     );
     
@@ -267,7 +267,7 @@ module eth_tx_fsm(
 
       -t- = 2ns
        ____      ____
-    __|    |____|    |____   ....     etch_clk_90:
+    __|    |____|    |____   ....     eth_clk_90:
     */
      
      wire eth_clk_90;
