@@ -34,7 +34,7 @@ module eth_tx_fsm(
         output reg  [15:0]   o_eth_mem_rd_addr = 0, //address to memory
         output wire [3:0 ]   o_eth_txd_4b,
         output wire          o_eth_txck,
-        output reg           o_busy = 0,
+        output wire          o_busy,
         output reg           o_lfsr_enable = 0
     );
     
@@ -67,8 +67,11 @@ module eth_tx_fsm(
     wire [7:0]   crc_data_out;
     reg  [7:0]   r_gap_count;
     wire         crc_dv;
-
-
+    
+    reg          fsm_busy = 0;
+    wire         eth_clk_90_locked;
+    //module should indicate busy if MMCM/PLL is not locked
+    assign       o_busy = (eth_clk_90_locked) ? fsm_busy : 1;
 
     //make switch to CRC module when its time to trasmit CRC at end of packet
     wire [7:0]   output_data;
@@ -112,7 +115,7 @@ module eth_tx_fsm(
     always @(posedge i_eth_clk) begin
         if(i_rst)begin
             o_eth_mem_rd_addr <= 0;
-            o_busy <= 0;
+            fsm_busy <= 0;
             proc_cntr <= 0;
             crc_enable <= 0;
             tx_enable <= 0;
@@ -133,7 +136,7 @@ module eth_tx_fsm(
                     if(eth_tx_start_re)begin
                         state <= S_TRANSMIT_PREAMBLE;
                         proc_cntr <= 0;
-                        o_busy  <= 1;
+                        fsm_busy  <= 1;
                         tx_size_cache <= tx_size;
                         saved_mac_destination <= mac_destination;
                         saved_mac_source      <= mac_source;
@@ -159,7 +162,7 @@ module eth_tx_fsm(
                 
                 
                 S_TRANSMIT_SOF: begin
-                    //start of frame is 1 byte of 8'hD5
+                    //start of frame is 1 byte of 8'D5
                     state <= S_TRANSMIT_MAC_DES;
                     crc_enable <= 1'b1;                   
                     tx_data <= saved_mac_destination[47:40];
@@ -225,7 +228,7 @@ module eth_tx_fsm(
                     end
                     else begin
                         if(r_gap_count == 0)begin
-                            o_busy <= 0;
+                            fsm_busy <= 0;
                             state <= S_IDLE;
                         end
                         else begin
@@ -240,7 +243,7 @@ module eth_tx_fsm(
                         proc_cntr <= proc_cntr + 1;
                     end
                     else begin
-                        o_busy <= 0;
+                        fsm_busy <= 0;
                         state <= S_IDLE;
                     end
                 end            
@@ -271,11 +274,11 @@ module eth_tx_fsm(
     */
      
      wire eth_clk_90;
-     clk_wiz_1 i_clk_wiz_ddr_data(
+     clk_wiz_1  clk_wiz_1_inst(
         .reset(i_rst),
         .clk_in1(i_eth_clk),
         .clk_out1(eth_clk_90),
-        .locked()
+        .locked(eth_clk_90_locked)
     );
     
     
