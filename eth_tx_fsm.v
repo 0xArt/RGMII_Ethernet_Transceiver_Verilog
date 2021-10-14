@@ -47,6 +47,7 @@ module eth_tx_fsm(
     localparam S_TRANSMIT_PAYLOAD 	     = 8'd5;
     localparam S_TRANSMIT_CRC 	         = 8'd6;
     localparam S_TRANSMIT_GAP 	         = 8'd7;
+    localparam S_DELAY 	                 = 8'd8;
 
 
     //MAC source/destination is fixed but this can be made an input
@@ -60,7 +61,7 @@ module eth_tx_fsm(
 	reg  [47:0]  saved_mac_source = 0;
     reg  [7:0]   tx_data = 0;
     reg          tx_enable = 0;
-    reg          tx_enable_delay = 'd0;
+    reg          tx_enable_delay = 0;
     reg  [7:0]   tx_data_delay = 0;
     reg  [2:0]   r_eth_tx_start = 0;
     reg  [15:0]  tx_size_cache;
@@ -228,8 +229,7 @@ module eth_tx_fsm(
                     end
                     else begin
                         if(r_gap_count == 0)begin
-                            fsm_busy <= 0;
-                            state <= S_IDLE;
+                            state <= S_DELAY;
                         end
                         else begin
                             state <= S_TRANSMIT_GAP;
@@ -243,10 +243,18 @@ module eth_tx_fsm(
                         proc_cntr <= proc_cntr + 1;
                     end
                     else begin
+                        state <= S_DELAY;
+                    end
+                end 
+                
+                S_DELAY: begin
+                    //wait for tx_en_delay to go low
+                    if(tx_enable_delay == 0)begin
                         fsm_busy <= 0;
                         state <= S_IDLE;
                     end
-                end            
+
+                end           
             endcase
         end
     end
