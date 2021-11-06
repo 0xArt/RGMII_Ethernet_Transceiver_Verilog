@@ -39,15 +39,15 @@ module eth_tx_fsm(
     );
     
     
-    localparam S_IDLE 	       	         = 8'd0;
-    localparam S_TRANSMIT_PREAMBLE 	     = 8'd1;
-    localparam S_TRANSMIT_SOF 	         = 8'd2;
-    localparam S_TRANSMIT_MAC_DES 	     = 8'd3;
-    localparam S_TRANSMIT_MAC_SRC 	     = 8'd4;
-    localparam S_TRANSMIT_PAYLOAD 	     = 8'd5;
-    localparam S_TRANSMIT_CRC 	         = 8'd6;
-    localparam S_TRANSMIT_GAP 	         = 8'd7;
-    localparam S_DELAY 	                 = 8'd8;
+    localparam S_IDLE 	       	         = 8'h00;
+    localparam S_TRANSMIT_PREAMBLE 	     = 8'h01;
+    localparam S_TRANSMIT_SOF 	         = 8'h02;
+    localparam S_TRANSMIT_MAC_DES 	     = 8'h03;
+    localparam S_TRANSMIT_MAC_SRC 	     = 8'h04;
+    localparam S_TRANSMIT_PAYLOAD 	     = 8'h05;
+    localparam S_TRANSMIT_CRC 	         = 8'h06;
+    localparam S_TRANSMIT_GAP 	         = 8'h07;
+    localparam S_DELAY 	                 = 8'h08;
 
 
     //MAC source/destination is fixed but this can be made an input
@@ -239,7 +239,7 @@ module eth_tx_fsm(
                 end
                 
                 S_TRANSMIT_GAP: begin
-                    if(proc_cntr < r_gap_count)begin
+                    if(proc_cntr < (r_gap_count-1))begin
                         proc_cntr <= proc_cntr + 1;
                     end
                     else begin
