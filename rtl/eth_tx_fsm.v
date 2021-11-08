@@ -47,7 +47,6 @@ module eth_tx_fsm(
     localparam S_TRANSMIT_PAYLOAD 	     = 8'h05;
     localparam S_TRANSMIT_CRC 	         = 8'h06;
     localparam S_TRANSMIT_GAP 	         = 8'h07;
-    localparam S_DELAY 	                 = 8'h08;
 
 
     //MAC source/destination is fixed but this can be made an input
@@ -141,7 +140,6 @@ module eth_tx_fsm(
                         tx_size_cache <= tx_size;
                         saved_mac_destination <= mac_destination;
                         saved_mac_source      <= mac_source;
-                        o_eth_mem_rd_addr     <= 0;
                         r_gap_count <= i_gap_count;
                         eth_tx_lfsr_enable <= i_eth_tx_lfsr_enable;
                     end
@@ -150,13 +148,12 @@ module eth_tx_fsm(
                 S_TRANSMIT_PREAMBLE: begin
                     //preamble consists of 7 byts of 8'h55
                     tx_enable <= 1;
-                    if(proc_cntr < 7)begin
+                    tx_data <= 8'h55;
+                    if(proc_cntr < 6)begin
                         proc_cntr <= proc_cntr + 1;
-                        tx_data <= 8'h55;
                     end
                     else begin
                         state <= S_TRANSMIT_SOF;
-                        tx_data <= 8'hD5;
                         proc_cntr <= 0;
                     end
                 end
@@ -164,35 +161,33 @@ module eth_tx_fsm(
                 
                 S_TRANSMIT_SOF: begin
                     //start of frame is 1 byte of 8'D5
+                    tx_data <= 8'hD5;
                     state <= S_TRANSMIT_MAC_DES;
-                    crc_enable <= 1'b1;                   
-                    tx_data <= saved_mac_destination[47:40];
-                    saved_mac_destination <= {saved_mac_destination[39:0], 8'b0};
-                    proc_cntr <= 1;
+                    proc_cntr <= 0;
                 end
                 
                 S_TRANSMIT_MAC_DES: begin
-                    if(proc_cntr < 6)begin
-                        tx_data <= saved_mac_destination[47:40];
-                        saved_mac_destination <= {saved_mac_destination[39:0], 8'b0};
+                    //transmit 6 bytes of mac destination data
+                    tx_data <= saved_mac_destination[47:40];
+                    saved_mac_destination <= {saved_mac_destination[39:0], 8'b0};
+                    //crc calculation  begins with mac des
+                    crc_enable <= 1'b1;                   
+                    if(proc_cntr < 5)begin
                         proc_cntr <= proc_cntr + 1;
                     end
                     else begin
                         state <= S_TRANSMIT_MAC_SRC;
-                        proc_cntr <= 1;
-                        tx_data <= saved_mac_source[47:40];
-                        saved_mac_source <= {saved_mac_source[39:0], 8'b0};
+                        proc_cntr <= 0;
+
                     end
                 end
                 
                 S_TRANSMIT_MAC_SRC: begin
-                    if(proc_cntr < 6)begin
-                        tx_data <= saved_mac_source[47:40];
-                        saved_mac_source <= {saved_mac_source[39:0], 8'b0};
+                    //transmit 6 bytes of mac source data
+                    tx_data <= saved_mac_source[47:40];
+                    saved_mac_source <= {saved_mac_source[39:0], 8'b0};
+                    if(proc_cntr < 5)begin
                         proc_cntr <= proc_cntr + 1;
-                        if(proc_cntr == 5)begin
-                           o_eth_mem_rd_addr <= o_eth_mem_rd_addr + 1'b1;
-                        end
                         if(proc_cntr == 4)begin
                            if(eth_tx_lfsr_enable)begin
                                 o_lfsr_enable <= 1;
@@ -201,60 +196,48 @@ module eth_tx_fsm(
                     end
                     else begin
                         state <= S_TRANSMIT_PAYLOAD;
-                        tx_data <= recieved_data;
                         o_eth_mem_rd_addr <= o_eth_mem_rd_addr + 1'b1;
                     end
                 end
                 
                 S_TRANSMIT_PAYLOAD: begin
                    tx_data <= recieved_data;
-                   if(o_eth_mem_rd_addr <= tx_size_cache) begin
+                   if(o_eth_mem_rd_addr < tx_size_cache) begin
                         o_eth_mem_rd_addr <= o_eth_mem_rd_addr + 1'b1;
                    end
                    else begin
                       state <= S_TRANSMIT_CRC;
                       proc_cntr <= 0;
-                      crc_enable <= 0;
                       o_lfsr_enable <= 0;
                    end
                 end
                 
                 S_TRANSMIT_CRC:begin
-                    if(proc_cntr < 4)begin
+                    crc_enable <= 0;
+                    tx_data <= 0;
+                    if(proc_cntr < 5)begin
                         proc_cntr <= proc_cntr + 1;
-                        if(proc_cntr == 3)begin
-                           tx_enable <= 0;
-                           tx_data <= 0;
+                        if(proc_cntr == 4)begin
+                            tx_enable <= 0;
                         end
                     end
                     else begin
-                        if(r_gap_count == 0)begin
-                            state <= S_DELAY;
-                        end
-                        else begin
-                            state <= S_TRANSMIT_GAP;
-                            proc_cntr <= 0;
-                        end
+                        proc_cntr <= 0;
+                        state <= S_TRANSMIT_GAP;
                     end
                 end
                 
                 S_TRANSMIT_GAP: begin
-                    if(proc_cntr < (r_gap_count-1))begin
+                    if(proc_cntr < (r_gap_count))begin
                         proc_cntr <= proc_cntr + 1;
                     end
                     else begin
-                        state <= S_DELAY;
+                        state <= S_IDLE;
+                        fsm_busy <= 0;
                     end
                 end 
                 
-                S_DELAY: begin
-                    //wait for tx_en_delay to go low
-                    if(tx_enable_delay == 0)begin
-                        fsm_busy <= 0;
-                        state <= S_IDLE;
-                    end
-
-                end           
+      
             endcase
         end
     end
