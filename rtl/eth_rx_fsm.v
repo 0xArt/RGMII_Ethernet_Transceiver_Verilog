@@ -123,14 +123,14 @@ module eth_rx_fsm(
     
         
     //state machine
-    localparam S_IDLE 	       	         = 8'd0;
-    localparam S_CAPTURE_MAC_SRC 	     = 8'd1;
-    localparam S_CAPTURE_LENGTH 	     = 8'd2;
-    localparam S_CAPTURE_PAYLOAD 	     = 8'd3;
-    localparam S_CAPTURE_CRC 	         = 8'd4;
-    localparam S_DELAY                   = 8'd5;
-    localparam S_COMPARE_CRC 	         = 8'd6;
-    localparam S_PROCESS_CAPTURE 	     = 8'd7;
+    localparam S_IDLE 	       	         = 8'h00;
+    localparam S_CAPTURE_MAC_SRC 	     = 8'h01;
+    localparam S_CAPTURE_LENGTH 	     = 8'h02;
+    localparam S_CAPTURE_PAYLOAD 	     = 8'h03;
+    localparam S_CAPTURE_CRC 	         = 8'h04;
+    localparam S_DELAY                   = 8'h05;
+    localparam S_COMPARE_CRC 	         = 8'h06;
+    localparam S_PROCESS_CAPTURE 	     = 8'h07;
     
     
     
@@ -146,13 +146,11 @@ module eth_rx_fsm(
     wire [7:0]  cal_select_data;
     
     wire [7:0]  captured_byte_alt;
-    
-
 	wire [47:0] cal_select_destination;
 	wire [47:0] target_destination  = 48'h1A_2B_3C_4D_5E_6F;
     reg  [15:0] payload_length = 0;
-
-    reg [7:0]   proc_cntr = 0;
+    reg [7:0]   state = S_IDLE;
+    reg [15:0]  proc_cntr = 0;
     reg [31:0]  captured_crc    = 0;
     reg [31:0]  computed_crc    = 0;
     reg [47:0]  captured_source = 0;
@@ -169,7 +167,6 @@ module eth_rx_fsm(
     reg [31:0] captured_byte_delay = 0;
 
     reg [1:0]  r_eth_rst_waddr = 0;
-    reg [15:0] counter = 0;
     wire [7:0] crc_data_input;
     
 
@@ -244,7 +241,6 @@ module eth_rx_fsm(
             captured_destination <= 0;
             o_valid_packet <= 0;
             payload_length <= 0;
-            counter <= 0;
         end
         else begin
             case(state)
@@ -265,6 +261,7 @@ module eth_rx_fsm(
                             cal_select <= 0;
                             crc_enable <= 1;
                             state <= S_CAPTURE_MAC_SRC;
+                            //we are one clock cycle behind so we must capture first byte of mac source now
                             captured_source[7:0] <= cal_select_data;
                             captured_source[47:8] <= captured_source[39:0];
                         end
@@ -274,6 +271,7 @@ module eth_rx_fsm(
                             o_busy <= 1;
                             crc_enable <= 1;
                             state <= S_CAPTURE_MAC_SRC;
+                            //we are one clock cycle behind so we must capture first byte of mac source now
                             captured_source[7:0] <= cal_select_data;
                             captured_source[47:8] <= captured_source[39:0];
                         end
@@ -290,44 +288,49 @@ module eth_rx_fsm(
                 end
                 
                 S_CAPTURE_MAC_SRC: begin
-                    if(proc_cntr < 5)begin
+                    captured_source[7:0] <= cal_select_data;
+                    captured_source[47:8] <= captured_source[39:0];
+                    if(proc_cntr < 4)begin
                         proc_cntr <= proc_cntr + 1;
-                        captured_source[7:0] <= cal_select_data;
-                        captured_source[47:8] <= captured_source[39:0];
                     end
                     else begin
                         state <= S_CAPTURE_LENGTH;
-                        payload_length[15:8] <= cal_select_data;
+                        proc_cntr <= 0;
+                        //payload_length[15:8] <= cal_select_data;
                     end
                 end
                 
                 S_CAPTURE_LENGTH: begin
                     //we use packet length data bytes within the packet to determine how many bytes to read
                     //this saves us the trouble of considering potential dealys with the RXCTL signal
+                    payload_length[15:0] <= payload_length[7:0];
                     payload_length[7:0] <= cal_select_data;
-                    counter <= 0;
-                    o_eth_mem_we <= 1;
-                    state <= S_CAPTURE_PAYLOAD;
+                    if(proc_cntr < 1)begin
+                        proc_cntr <= proc_cntr + 1;
+                    end
+                    else begin
+                        proc_cntr <= 0;
+                        o_eth_mem_we <= 1;
+                        state <= S_CAPTURE_PAYLOAD;
+                    end
                 end
                 
                 S_CAPTURE_PAYLOAD: begin
                     if(o_eth_mem_wr_addr < 16'd65530)begin
                         o_eth_mem_wr_addr <= o_eth_mem_wr_addr + 1'b1;
                     end
-                    if(counter < payload_length)begin
-                        counter <= counter + 1;
+                     if(proc_cntr < (payload_length-1))begin
+                        proc_cntr <= proc_cntr + 1;
                     end
                     else begin
                         o_eth_mem_we <= 0;
                         state <= S_CAPTURE_CRC;
-                        captured_crc[7:0] <= cal_select_data[7:0];
-                        captured_crc[31:8] <= captured_crc[23:0];
                         proc_cntr <= 0;   
-                    end
+                    end                   
                 end
                 
                 S_CAPTURE_CRC: begin
-                    if(proc_cntr < 3)begin
+                    if(proc_cntr < 4)begin
                         captured_crc[7:0] <= cal_select_data[7:0];
                         captured_crc[31:8] <= captured_crc[23:0];
                         proc_cntr <= proc_cntr + 1;
@@ -385,7 +388,8 @@ module eth_rx_fsm(
                     o_busy <= 0;
                     captured_destination <= 0;
                     captured_destination_alt <= 0;
-                    counter <= 0;
+                    captured_source <= 0;
+                    proc_cntr <= 0;
                     state <= S_IDLE;
                 end
             endcase
