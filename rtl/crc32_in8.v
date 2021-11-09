@@ -21,65 +21,28 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module crc32_in8(i_clk,i_dv,i_data_in,o_dv,o_data_out); 
+module crc32_in8(
+    input  wire i_clk,
+    input  wire i_dv, 
+    input  wire [7:0] i_data_in,
+    output wire o_dv,
+    output wire [7:0] o_data_out
+);
 
-input wire i_clk; //
-input wire i_dv; //
-input [7:0] i_data_in; //
-output wire o_dv;
-output [7:0] o_data_out; // 
-
-
+//reverse bits
 wire [7:0] crc_in;
-//assign crc_in = i_data_in;
 assign crc_in = {i_data_in[0],i_data_in[1],i_data_in[2],i_data_in[3],i_data_in[4],i_data_in[5],i_data_in[6],i_data_in[7]};
-//assign crc_in = {i_data_in[3:0],i_data_in[7:4]};
 
-reg [7:0] crc_out = 0; //
+reg [7:0] crc_out = 0; 
 assign o_data_out = crc_out;
 
-reg [31:0] crc_reg = 0; //
-reg [1:0] count = 0; //
-reg [1:0] state = 0; //
+reg [31:0] crc_reg = 0; 
+reg [1:0] count = 0; 
+reg [1:0] state = 0; 
 
-wire [31:0] next_crc_reg; //
 
 reg dv_out = 0;
 assign o_dv = dv_out;
-/*
-assign next_crc_reg[ 0] = crc_reg[24] ^ crc_reg[30] ^ crc_in[0] ^ crc_in[6]; 
-assign next_crc_reg[ 1] = crc_reg[24] ^ crc_reg[25] ^ crc_reg[30] ^ crc_reg[31] ^ crc_in[0] ^ crc_in[1] ^ crc_in[6] ^ crc_in[7]; 
-assign next_crc_reg[ 2] = crc_reg[24] ^ crc_reg[25] ^ crc_reg[26] ^ crc_reg[30] ^ crc_reg[31] ^ crc_in[0] ^ crc_in[1] ^ crc_in[2] ^ crc_in[6] ^ crc_in[7]; 
-assign next_crc_reg[ 3] = crc_reg[25] ^ crc_reg[26] ^ crc_reg[27] ^ crc_reg[31] ^ crc_in[1] ^ crc_in[2] ^ crc_in[3] ^ crc_in[7]; 
-assign next_crc_reg[ 4] = crc_reg[24] ^ crc_reg[26] ^ crc_reg[27] ^ crc_reg[28] ^ crc_reg[30] ^ crc_in[0] ^ crc_in[2] ^ crc_in[3] ^ crc_in[4] ^ crc_in[6]; 
-assign next_crc_reg[ 5] = crc_reg[24] ^ crc_reg[25] ^ crc_reg[27] ^ crc_reg[28] ^ crc_reg[29] ^ crc_reg[30] ^ crc_reg[31] ^ crc_in[0] ^ crc_in[1] ^ crc_in[3] ^ crc_in[4] ^ crc_in[5] ^ crc_in[6] ^ crc_in[7]; 
-assign next_crc_reg[ 6] = crc_reg[25] ^ crc_reg[26] ^ crc_reg[28] ^ crc_reg[29] ^ crc_reg[30] ^ crc_reg[31] ^ crc_in[1] ^ crc_in[2] ^ crc_in[4] ^ crc_in[5] ^ crc_in[6] ^ crc_in[7]; 
-assign next_crc_reg[ 7] = crc_reg[24] ^ crc_reg[26] ^ crc_reg[27] ^ crc_reg[29] ^ crc_reg[31] ^ crc_in[0] ^ crc_in[2] ^ crc_in[3] ^ crc_in[5] ^ crc_in[7]; 
-assign next_crc_reg[ 8] = crc_reg[0] ^ crc_reg[24] ^ crc_reg[25] ^ crc_reg[27] ^ crc_reg[28] ^ crc_in[0] ^ crc_in[1] ^ crc_in[3] ^ crc_in[4]; 
-assign next_crc_reg[ 9] = crc_reg[1] ^ crc_reg[25] ^ crc_reg[26] ^ crc_reg[28] ^ crc_reg[29] ^ crc_in[1] ^ crc_in[2] ^ crc_in[4] ^ crc_in[5]; 
-assign next_crc_reg[10] = crc_reg[2] ^ crc_reg[24] ^ crc_reg[26] ^ crc_reg[27] ^ crc_reg[29] ^ crc_in[0] ^ crc_in[2] ^ crc_in[3] ^ crc_in[5]; 
-assign next_crc_reg[11] = crc_reg[3] ^ crc_reg[24] ^ crc_reg[25] ^ crc_reg[27] ^ crc_reg[28] ^ crc_in[0] ^ crc_in[1] ^ crc_in[3] ^ crc_in[4]; 
-assign next_crc_reg[12] = crc_reg[4] ^ crc_reg[24] ^ crc_reg[25] ^ crc_reg[26] ^ crc_reg[28] ^ crc_reg[29] ^ crc_reg[30] ^ crc_in[0] ^ crc_in[1] ^ crc_in[2] ^ crc_in[4] ^ crc_in[5] ^ crc_in[6]; 
-assign next_crc_reg[13] = crc_reg[5] ^ crc_reg[25] ^ crc_reg[26] ^ crc_reg[27] ^ crc_reg[29] ^ crc_reg[30] ^ crc_reg[31] ^ crc_in[1] ^ crc_in[2] ^ crc_in[3] ^ crc_in[5] ^ crc_in[6] ^ crc_in[7]; 
-assign next_crc_reg[14] = crc_reg[6] ^ crc_reg[26] ^ crc_reg[27] ^ crc_reg[28] ^ crc_reg[30] ^ crc_reg[31] ^ crc_in[2] ^ crc_in[3] ^ crc_in[4] ^ crc_in[6] ^ crc_in[7]; 
-assign next_crc_reg[15] = crc_reg[7] ^ crc_reg[27] ^ crc_reg[28] ^ crc_reg[29] ^ crc_reg[31] ^ crc_in[3] ^ crc_in[4] ^ crc_in[5] ^ crc_in[7]; 
-assign next_crc_reg[16] = crc_reg[8] ^ crc_reg[24] ^ crc_reg[28] ^ crc_reg[29] ^ crc_in[0] ^ crc_in[4] ^ crc_in[5]; 
-assign next_crc_reg[17] = crc_reg[9] ^ crc_reg[25] ^ crc_reg[29] ^ crc_reg[30] ^ crc_in[1] ^ crc_in[5] ^ crc_in[6]; 
-assign next_crc_reg[18] = crc_reg[10] ^ crc_reg[26] ^ crc_reg[30] ^ crc_reg[31] ^ crc_in[2] ^ crc_in[6] ^ crc_in[7]; 
-assign next_crc_reg[19] = crc_reg[11] ^ crc_reg[27] ^ crc_reg[31] ^ crc_in[3] ^ crc_in[7]; 
-assign next_crc_reg[20] = crc_reg[12] ^ crc_reg[28] ^ crc_in[4]; 
-assign next_crc_reg[21] = crc_reg[13] ^ crc_reg[29] ^ crc_in[5]; 
-assign next_crc_reg[22] = crc_reg[14] ^ crc_reg[24] ^ crc_in[0]; 
-assign next_crc_reg[23] = crc_reg[15] ^ crc_reg[24] ^ crc_reg[25] ^ crc_reg[30] ^ crc_in[0] ^ crc_in[1] ^ crc_in[6]; 
-assign next_crc_reg[24] = crc_reg[16] ^ crc_reg[25] ^ crc_reg[26] ^ crc_reg[31] ^ crc_in[1] ^ crc_in[2] ^ crc_in[7]; 
-assign next_crc_reg[25] = crc_reg[17] ^ crc_reg[26] ^ crc_reg[27] ^ crc_in[2] ^ crc_in[3]; 
-assign next_crc_reg[26] = crc_reg[18] ^ crc_reg[24] ^ crc_reg[27] ^ crc_reg[28] ^ crc_reg[30] ^ crc_in[0] ^ crc_in[3] ^ crc_in[4] ^ crc_in[6]; 
-assign next_crc_reg[27] = crc_reg[19] ^ crc_reg[25] ^ crc_reg[28] ^ crc_reg[29] ^ crc_reg[31] ^ crc_in[1] ^ crc_in[4] ^ crc_in[5] ^ crc_in[7]; 
-assign next_crc_reg[28] = crc_reg[20] ^ crc_reg[26] ^ crc_reg[29] ^ crc_reg[30] ^ crc_in[2] ^ crc_in[5] ^ crc_in[6]; 
-assign next_crc_reg[29] = crc_reg[21] ^ crc_reg[27] ^ crc_reg[30] ^ crc_reg[31] ^ crc_in[3] ^ crc_in[6] ^ crc_in[7]; 
-assign next_crc_reg[30] = crc_reg[22] ^ crc_reg[28] ^ crc_reg[31] ^ crc_in[4] ^ crc_in[7]; 
-assign next_crc_reg[31] = crc_reg[23] ^ crc_reg[29] ^ crc_in[5]; 
-  */
 wire [31:0] newcrc;
 wire [31:0] newcrc_xor;
 assign newcrc_xor = newcrc ^ 32'hFFFF_FFFF;
@@ -122,70 +85,58 @@ assign newcrc[28] = d[6] ^ d[5] ^ d[2] ^ c[20] ^ c[26] ^ c[29] ^ c[30];
 assign newcrc[29] = d[7] ^ d[6] ^ d[3] ^ c[21] ^ c[27] ^ c[30] ^ c[31];
 assign newcrc[30] = d[7] ^ d[4] ^ c[22] ^ c[28] ^ c[31];
 assign newcrc[31] = d[5] ^ c[23] ^ c[29];  
-parameter idle = 2'b00; //
-parameter compute = 2'b01; //
-parameter finish = 2'b10; //
-//
-reg [31:0] crc_32b_xor_br;
-//
-always @(posedge i_clk) begin 
-    case(state) //
-     idle:begin //
-         if(i_dv) begin //l 
-            state <= compute; 
-            dv_out <= i_dv;
-         end else 
-            state <= idle; 
-     end 
-     compute:begin 
-         
-         if(~i_dv) // 
-            state <= finish; 
-         else begin
-            state <= compute; 
-            dv_out <= i_dv;
-         end
-     end 
-     finish:begin 
-         if(count==3) begin //
-            state <= idle; 
-             dv_out <= 0;
-         end else 
-            state <= finish; 
-     end 
-    endcase 
-end
- 
-always @(posedge i_clk) begin // 
 
-     case(state) 
-         idle:begin //
-             //crc_reg[31:0] <= 32'b0000_0000_0000_0000_0000_0000_0000_0000; 
-             if(~i_dv) begin
-                 crc_reg[31:0] <= 32'hFFFF_FFFF;
-                 //crc_reg[31:0] <= 32'b0000_0000_0000_0000_0000_0000_0000_0000; 
-             end else begin
-                 crc_reg[31:0]<= newcrc[31:0]; 
-             end
+
+reg [31:0] crc_32b_xor_br;
+
+
+
+localparam S_IDLE 	       	         = 8'h00;
+localparam S_COMPUTE         	     = 8'h01;
+localparam S_FINISH 	             = 8'h02;
+
+
+always @(posedge i_clk) begin 
+    case(state)
+         S_IDLE:begin
              crc_out <= i_data_in;
-             
+             if(i_dv) begin 
+                state <= S_COMPUTE; 
+                dv_out <= i_dv;
+                 crc_reg[31:0]<= newcrc[31:0]; 
+             end 
+             else begin 
+                 crc_reg[31:0] <= 32'hFFFF_FFFF;
+                state <= S_IDLE;
+             end
          end 
-         compute:begin // 
+         
+         S_COMPUTE:begin 
             if(i_dv) begin
                  crc_reg <= newcrc; 
                  crc_32b_xor_br <= newcrc_xor_br;
                  crc_out <= i_data_in;
+                 dv_out <= i_dv;
             end else begin
                 crc_32b_xor_br <= {8'b0000_0000,crc_32b_xor_br[31:8]};  
                 crc_out[7:0] <= crc_32b_xor_br[7:0]; 
+                state <= S_FINISH; 
             end
             
+            
          end 
-         finish:begin //
+         
+         S_FINISH:begin 
              crc_32b_xor_br <= {8'b0000_0000,crc_32b_xor_br[31:8]}; 
              crc_out[7:0] <= crc_32b_xor_br[7:0];  
              count <= count + 1'b1;
+             if(count==3) begin 
+                state <= S_IDLE; 
+                 dv_out <= 0;
+             end 
          end 
     endcase 
 end
+ 
+
 endmodule
