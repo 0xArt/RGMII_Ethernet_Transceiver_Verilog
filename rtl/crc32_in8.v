@@ -17,7 +17,7 @@
 // Revision:
 // Revision 0.01 - File Created
 // Additional Comments:
-// 
+//  Based on https://github.com/Heng-xiu/implement-CRC-32-in-Verilog/blob/master/CRC_32_paraller.v
 //////////////////////////////////////////////////////////////////////////////////
 
 
