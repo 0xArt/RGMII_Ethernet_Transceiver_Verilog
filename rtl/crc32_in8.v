@@ -103,10 +103,10 @@ always @(posedge i_clk) begin
              if(i_dv) begin 
                 state <= S_COMPUTE; 
                 dv_out <= i_dv;
-                 crc_reg[31:0]<= newcrc[31:0]; 
+                crc_reg[31:0]<= newcrc[31:0]; 
              end 
              else begin 
-                 crc_reg[31:0] <= 32'hFFFF_FFFF;
+                crc_reg[31:0] <= 32'hFFFF_FFFF;
                 state <= S_IDLE;
              end
          end 
@@ -122,8 +122,6 @@ always @(posedge i_clk) begin
                 crc_out[7:0] <= crc_32b_xor_br[7:0]; 
                 state <= S_FINISH; 
             end
-            
-            
          end 
          
          S_FINISH:begin 
@@ -132,7 +130,7 @@ always @(posedge i_clk) begin
              count <= count + 1'b1;
              if(count==3) begin 
                 state <= S_IDLE; 
-                 dv_out <= 0;
+                dv_out <= 0;
              end 
          end 
     endcase 

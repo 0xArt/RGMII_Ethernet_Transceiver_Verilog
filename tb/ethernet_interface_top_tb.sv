@@ -42,7 +42,7 @@ module ethernet_interface_top_tb(
     
     
     always @(eth_rxck) begin
-        #2000;
+        #3000;
         eth_rxck_extra_delay <= ~eth_rxck_extra_delay;
     end
     
