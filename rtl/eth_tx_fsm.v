@@ -88,7 +88,7 @@ module eth_tx_fsm(
     assign       eth_tx_start_re = (r_eth_tx_start[2] == 0 && r_eth_tx_start[1] == 1) ? 1 : 0;
 
 
-    //minimum payload size is 60 to be compliant with winpcap
+    //minimum payload size is 60 to be compliant with npcap
     wire [15:0] tx_size;
     assign tx_size = (i_eth_tx_size < 60) ? 16'd60 : i_eth_tx_size;
     
@@ -160,7 +160,7 @@ module eth_tx_fsm(
                 
                 
                 S_TRANSMIT_SOF: begin
-                    //start of frame is 1 byte of 8'D5
+                    //start of frame is 1 byte of 8'hD5
                     tx_data <= 8'hD5;
                     state <= S_TRANSMIT_MAC_DES;
                     proc_cntr <= 0;
