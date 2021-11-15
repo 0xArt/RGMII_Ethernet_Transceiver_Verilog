@@ -104,20 +104,24 @@ module ethernet_interface_top_tb(
         repeat (1000) @(posedge eth_rxck);
         repeat (1) begin
             i = 0;
-            repeat (30) begin
-                
+            repeat (39) begin
                 @(negedge eth_rxck);
                 #2000;
+                if(i==0)begin
+                    eth_rxctl <= 1'b1;
+                end
+                if(i==38)begin
+                    eth_rxctl <= 1'b0;
+                end
                 eth_rxd <= eth_msg[i][3:0];
                 @(posedge eth_rxck);
                 #2000;
-                if(i == 29)begin
-                    eth_rxctl <= 1'b0;
-                end
                 eth_rxd <= eth_msg[i][7:4];
-                
                 i = i + 1;
             end
+            eth_rxd <= 0;
+            @(posedge eth_rxck);
+
             repeat (50) @(posedge eth_rxck);
         end
         
@@ -126,20 +130,22 @@ module ethernet_interface_top_tb(
         repeat (1000) @(posedge eth_rxck);
         repeat (1) begin
             i = 0;
-            repeat (30) begin
-                
+            repeat (39) begin
                 @(negedge eth_rxck_extra_delay);
                 #2000;
+                if(i==0)begin
+                    eth_rxctl <= 1'b1;
+                end
+                if(i==38)begin
+                    eth_rxctl <= 1'b0;
+                end
                 eth_rxd <= eth_msg[i][3:0];
                 @(posedge eth_rxck_extra_delay);
                 #2000;
-                if(i == 29)begin
-                    eth_rxctl <= 1'b0;
-                end
                 eth_rxd <= eth_msg[i][7:4];
-                
                 i = i + 1;
             end
+            eth_rxd <= 0;
             repeat (50) @(posedge eth_rxck);
         end
         
@@ -188,46 +194,59 @@ module ethernet_interface_top_tb(
     
     
     initial begin
+    
+        //Preamble
+        eth_msg[0] = 8'h55; 
+        eth_msg[1] = 8'h55; 
+        eth_msg[2] = 8'h55; 
+        eth_msg[3] = 8'h55;
+        eth_msg[4] = 8'h55; 
+        eth_msg[5] = 8'h55;       
+        eth_msg[6] = 8'h55; 
+        //SOF
+        eth_msg[7] = 8'hD5; 
         //Dest MAC
-        eth_msg[ 0] = 8'h1A; 
-        eth_msg[ 1] = 8'h2B; 
-        eth_msg[ 2] = 8'h3C; 
-        eth_msg[ 3] = 8'h4D; 
-        eth_msg[ 4] = 8'h5E; 
-        eth_msg[ 5] = 8'h6F; 
+        eth_msg[ 8] = 8'h1A; 
+        eth_msg[ 9] = 8'h2B; 
+        eth_msg[10] = 8'h3C; 
+        eth_msg[11] = 8'h4D; 
+        eth_msg[12] = 8'h5E; 
+        eth_msg[13] = 8'h6F; 
                 
         //Src MAC
-        eth_msg[ 6] = 8'hFF; 
-        eth_msg[ 7] = 8'hFF; 
-        eth_msg[ 8] = 8'hFF; 
-        eth_msg[ 9] = 8'hFF; 
-        eth_msg[10] = 8'hFF; 
-        eth_msg[11] = 8'hFF;
+        eth_msg[14] = 8'hFF; 
+        eth_msg[15] = 8'hFF; 
+        eth_msg[16] = 8'hFF; 
+        eth_msg[17] = 8'hFF; 
+        eth_msg[18] = 8'hFF; 
+        eth_msg[19] = 8'hFF;
         
         //Payload Length
-        eth_msg[12] = 8'h00; 
-        eth_msg[13] = 8'h0C; 
+        eth_msg[20] = 8'h00; 
+        eth_msg[21] = 8'h0C; 
         //Payload
-        eth_msg[14] = 8'h00; 
-        eth_msg[15] = 8'h01;  
-        eth_msg[16] = 8'h02;
-        eth_msg[17] = 8'h03; 
-        eth_msg[18] = 8'h04;
-        eth_msg[19] = 8'h05;
-        eth_msg[20] = 8'h06;
-        eth_msg[21] = 8'h07;
-        eth_msg[22] = 8'h08;
-        eth_msg[23] = 8'h09;
-        eth_msg[24] = 8'h0A;
-        eth_msg[25] = 8'h0B;
+        eth_msg[22] = 8'h00; 
+        eth_msg[23] = 8'h01;  
+        eth_msg[24] = 8'h02;
+        eth_msg[25] = 8'h03; 
+        eth_msg[26] = 8'h04;
+        eth_msg[27] = 8'h05;
+        eth_msg[28] = 8'h06;
+        eth_msg[29] = 8'h07;
+        eth_msg[30] = 8'h08;
+        eth_msg[31] = 8'h09;
+        eth_msg[32] = 8'h0A;
+        eth_msg[33] = 8'h0B;
         
         //CRC32
         //calculated using https://crccalc.com/
-        eth_msg[26] = 8'h89; 
-        eth_msg[27] = 8'h2A; 
-        eth_msg[28] = 8'hDF; 
-        eth_msg[29] = 8'h5D; 
+        eth_msg[34] = 8'h89; 
+        eth_msg[35] = 8'h2A; 
+        eth_msg[36] = 8'hDF; 
+        eth_msg[37] = 8'h5D; 
 
+        //gap
+        eth_msg[38] = 8'h00; 
 
         
             
