@@ -118,6 +118,25 @@ module eth_rx_fsm(
         .S(1'b0)                   // 1-bit set
     );
     
+    //
+    // DDR input register for rxctl
+    //
+    wire  [1:0] rxctl_ddr_q;         // Output from DDR register, MSb = rising edge bit, LSb = falling edge bit
+    IDDR #(
+        .DDR_CLK_EDGE("SAME_EDGE_PIPELINED"), // "OPPOSITE_EDGE", "SAME_EDGE"
+                                              //    or "SAME_EDGE_PIPELINED"
+        .INIT_Q1(1'b0),            // Initial value of Q1: 1'b0 or 1'b1
+        .INIT_Q2(1'b0),            // Initial value of Q2: 1'b0 or 1'b1
+        .SRTYPE("ASYNC")           // Set/Reset type: "SYNC" or "ASYNC"
+    ) r_ddr_rxctl (
+        .Q1(rxctl_ddr_q[0]),          // 1-bit output for positive edge of clock
+        .Q2(rxctl_ddr_q[1]),          // 1-bit output for negative edge of clock
+        .C(i_eth_clk),                  // 1-bit primary clock input
+        .CE(1'b1),                 // 1-bit clock enable input
+        .D(i_eth_dv),                // 1-bit DDR data input
+        .R(i_rst),                   // 1-bit reset
+        .S(1'b0)                   // 1-bit set
+    );
     
     
     
@@ -161,7 +180,7 @@ module eth_rx_fsm(
     
     //retimer flops
     //retimes top control signals to current eth sm signals
-    reg [2:0]  r_eth_dv = 0;
+    reg [1:0]  r_eth_dv = 0;
     reg [7:0]  captured_byte = 0;
     reg [55:0] cal_select_data_delay = 0;
     reg [31:0] captured_byte_delay = 0;
@@ -180,9 +199,7 @@ module eth_rx_fsm(
             captured_byte_delay <= 0;
         end
         else begin
-            r_eth_dv[0] <= i_eth_dv;
-            r_eth_dv[1] <= r_eth_dv[0];
-            r_eth_dv[2] <= r_eth_dv[1];
+            r_eth_dv <= rxctl_ddr_q;
       
             //data sample if all delays are correct
             captured_byte <= {rxd3_ddr_q[1],rxd2_ddr_q[1],rxd1_ddr_q[1],rxd0_ddr_q[1],rxd3_ddr_q[0],rxd2_ddr_q[0],rxd1_ddr_q[0],rxd0_ddr_q[0]}; //Reverse nibbles
