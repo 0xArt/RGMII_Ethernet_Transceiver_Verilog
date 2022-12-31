@@ -91,9 +91,9 @@ reg [31:0] crc_32b_xor_br;
 
 
 
-localparam S_IDLE 	       	         = 8'h00;
-localparam S_COMPUTE         	     = 8'h01;
-localparam S_FINISH 	             = 8'h02;
+localparam S_IDLE                    = 8'h00;
+localparam S_COMPUTE                 = 8'h01;
+localparam S_FINISH                  = 8'h02;
 
 
 always @(posedge i_clk) begin 
@@ -101,7 +101,7 @@ always @(posedge i_clk) begin
          S_IDLE:begin
              crc_out <= i_data_in;
              if(i_dv) begin 
-                state <= S_COMPUTE; 
+                state <= S_COMPUTE;
                 dv_out <= i_dv;
                 crc_reg[31:0]<= newcrc[31:0]; 
              end 

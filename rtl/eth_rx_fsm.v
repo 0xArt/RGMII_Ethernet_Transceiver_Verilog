@@ -142,14 +142,14 @@ module eth_rx_fsm(
     
         
     //state machine
-    localparam S_IDLE 	       	         = 8'h00;
-    localparam S_CAPTURE_MAC_SRC 	     = 8'h01;
-    localparam S_CAPTURE_LENGTH 	     = 8'h02;
-    localparam S_CAPTURE_PAYLOAD 	     = 8'h03;
-    localparam S_CAPTURE_CRC 	         = 8'h04;
+    localparam S_IDLE                    = 8'h00;
+    localparam S_CAPTURE_MAC_SRC         = 8'h01;
+    localparam S_CAPTURE_LENGTH          = 8'h02;
+    localparam S_CAPTURE_PAYLOAD        = 8'h03;
+    localparam S_CAPTURE_CRC             = 8'h04;
     localparam S_DELAY                   = 8'h05;
-    localparam S_COMPARE_CRC 	         = 8'h06;
-    localparam S_PROCESS_CAPTURE 	     = 8'h07;
+    localparam S_COMPARE_CRC             = 8'h06;
+    localparam S_PROCESS_CAPTURE         = 8'h07;
     
     
     
@@ -165,8 +165,8 @@ module eth_rx_fsm(
     wire [7:0]  cal_select_data;
     
     wire [7:0]  captured_byte_alt;
-	wire [47:0] cal_select_destination;
-	wire [47:0] target_destination  = 48'h1A_2B_3C_4D_5E_6F;
+    wire [47:0] cal_select_destination;
+    wire [47:0] target_destination  = 48'h1A_2B_3C_4D_5E_6F;
     reg  [15:0] payload_length = 0;
     reg [7:0]   state = S_IDLE;
     reg [15:0]  proc_cntr = 0;

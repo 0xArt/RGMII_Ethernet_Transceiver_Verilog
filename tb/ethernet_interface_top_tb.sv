@@ -24,7 +24,7 @@
 module ethernet_interface_top_tb(
     );
     
-	reg [7:0] eth_msg [0:888];
+    reg [7:0] eth_msg [0:888];
     
     
     integer i;
@@ -196,37 +196,37 @@ module ethernet_interface_top_tb(
     initial begin
     
         //Preamble
-        eth_msg[0] = 8'h55; 
-        eth_msg[1] = 8'h55; 
-        eth_msg[2] = 8'h55; 
+        eth_msg[0] = 8'h55;
+        eth_msg[1] = 8'h55;
+        eth_msg[2] = 8'h55;
         eth_msg[3] = 8'h55;
-        eth_msg[4] = 8'h55; 
-        eth_msg[5] = 8'h55;       
-        eth_msg[6] = 8'h55; 
+        eth_msg[4] = 8'h55;
+        eth_msg[5] = 8'h55;
+        eth_msg[6] = 8'h55;
         //SOF
-        eth_msg[7] = 8'hD5; 
+        eth_msg[7] = 8'hD5;
         //Dest MAC
-        eth_msg[ 8] = 8'h1A; 
-        eth_msg[ 9] = 8'h2B; 
-        eth_msg[10] = 8'h3C; 
-        eth_msg[11] = 8'h4D; 
-        eth_msg[12] = 8'h5E; 
-        eth_msg[13] = 8'h6F; 
+        eth_msg[ 8] = 8'h1A;
+        eth_msg[ 9] = 8'h2B;
+        eth_msg[10] = 8'h3C;
+        eth_msg[11] = 8'h4D;
+        eth_msg[12] = 8'h5E;
+        eth_msg[13] = 8'h6F;
                 
         //Src MAC
-        eth_msg[14] = 8'hFF; 
-        eth_msg[15] = 8'hFF; 
-        eth_msg[16] = 8'hFF; 
-        eth_msg[17] = 8'hFF; 
-        eth_msg[18] = 8'hFF; 
+        eth_msg[14] = 8'hFF;
+        eth_msg[15] = 8'hFF;
+        eth_msg[16] = 8'hFF;
+        eth_msg[17] = 8'hFF;
+        eth_msg[18] = 8'hFF;
         eth_msg[19] = 8'hFF;
         
         //Payload Length
-        eth_msg[20] = 8'h00; 
-        eth_msg[21] = 8'h0C; 
+        eth_msg[20] = 8'h00;
+        eth_msg[21] = 8'h0C;
         //Payload
-        eth_msg[22] = 8'h00; 
-        eth_msg[23] = 8'h01;  
+        eth_msg[22] = 8'h00;
+        eth_msg[23] = 8'h01;
         eth_msg[24] = 8'h02;
         eth_msg[25] = 8'h03; 
         eth_msg[26] = 8'h04;
@@ -240,15 +240,12 @@ module ethernet_interface_top_tb(
         
         //CRC32
         //calculated using https://crccalc.com/
-        eth_msg[34] = 8'h89; 
-        eth_msg[35] = 8'h2A; 
-        eth_msg[36] = 8'hDF; 
-        eth_msg[37] = 8'h5D; 
+        eth_msg[34] = 8'h89;
+        eth_msg[35] = 8'h2A;
+        eth_msg[36] = 8'hDF;
+        eth_msg[37] = 8'h5D;
 
         //gap
-        eth_msg[38] = 8'h00; 
-
-        
-            
+        eth_msg[38] = 8'h00;
     end
 endmodule
